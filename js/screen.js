@@ -248,6 +248,17 @@ async function handleProjectorState(state) {
 
     }
 
+
+    if (
+      state.status === "result"
+    ) {
+
+      await revealProjectorBattleAnswer(
+        state.current_question
+      );
+
+    }
+
     return;
   }
 
@@ -315,6 +326,7 @@ async function handleProjectorState(state) {
 
     await showWinner();
 
+    return;
   }
 
 }
@@ -376,6 +388,28 @@ async function updateBattleStats() {
 
 
 // ==========================================
+// RESET BATTLE VISUALS
+// ==========================================
+
+function resetBattleVisuals() {
+
+  const timer =
+    document.getElementById(
+      "projectorTimer"
+    );
+
+  if (timer) {
+
+    timer.style.background = "";
+
+    timer.style.transform = "";
+
+  }
+
+}
+
+
+// ==========================================
 // BATTLE QUESTION
 // ==========================================
 
@@ -384,6 +418,13 @@ async function loadBattleQuestion(
 ) {
 
   if (!questionId) return;
+
+
+  clearInterval(
+    projectorTimerInterval
+  );
+
+  resetBattleVisuals();
 
 
   const { data, error } =
@@ -451,18 +492,220 @@ async function loadBattleQuestion(
       card.className =
         "projector-answer-card";
 
-      card.innerHTML = `
-        <span>${letter}</span>
-        <strong>${escapeHTML(text)}</strong>
-      `;
+      card.dataset.letter =
+        letter;
 
-      answers.appendChild(card);
+      const letterCircle =
+        document.createElement("span");
+
+      letterCircle.textContent =
+        letter;
+
+
+      const answerText =
+        document.createElement("strong");
+
+      answerText.textContent =
+        text;
+
+
+      card.appendChild(
+        letterCircle
+      );
+
+      card.appendChild(
+        answerText
+      );
+
+
+      answers.appendChild(
+        card
+      );
 
     }
   );
 
 
   startProjectorTimer(10);
+
+}
+
+
+// ==========================================
+// REVEAL BATTLE ANSWER
+// ==========================================
+
+async function revealProjectorBattleAnswer(
+  questionId
+) {
+
+  if (!questionId) return;
+
+
+  clearInterval(
+    projectorTimerInterval
+  );
+
+
+  const { data, error } =
+    await supabaseClient
+      .from("battle_questions")
+      .select(
+        "question, correct_answer, option_a, option_b, option_c, option_d"
+      )
+      .eq("id", questionId)
+      .single();
+
+
+  if (error || !data) {
+
+    console.error(
+      "Could not reveal answer:",
+      error
+    );
+
+    return;
+  }
+
+
+  const correctLetter =
+    String(data.correct_answer)
+      .trim()
+      .toUpperCase();
+
+
+  const answerText = {
+
+    A: data.option_a,
+
+    B: data.option_b,
+
+    C: data.option_c,
+
+    D: data.option_d
+
+  };
+
+
+  const cards =
+    document.querySelectorAll(
+      ".projector-answer-card"
+    );
+
+
+  cards.forEach(card => {
+
+    const letter =
+      card.dataset.letter;
+
+
+    card.style.transition =
+      "all 0.35s ease";
+
+
+    if (
+      letter === correctLetter
+    ) {
+
+      card.style.background =
+        "#7ee787";
+
+      card.style.opacity =
+        "1";
+
+      card.style.transform =
+        "scale(1.04)";
+
+      card.style.borderWidth =
+        "4px";
+
+
+      const circle =
+        card.querySelector("span");
+
+      if (circle) {
+        circle.textContent = "✓";
+      }
+
+
+    } else {
+
+      card.style.opacity =
+        "0.3";
+
+      card.style.transform =
+        "scale(0.96)";
+
+    }
+
+  });
+
+
+  const timer =
+    document.getElementById(
+      "projectorTimer"
+    );
+
+
+  if (timer) {
+
+    timer.textContent = "✓";
+
+    timer.style.background =
+      "#7ee787";
+
+  }
+
+
+  const question =
+    document.getElementById(
+      "projectorQuestion"
+    );
+
+
+  if (question) {
+
+    question.innerHTML = "";
+
+
+    const label =
+      document.createElement("span");
+
+    label.textContent =
+      "CORRECT ANSWER";
+
+    label.style.display =
+      "block";
+
+    label.style.fontSize =
+      "16px";
+
+    label.style.letterSpacing =
+      "3px";
+
+    label.style.color =
+      "#c40022";
+
+    label.style.marginBottom =
+      "12px";
+
+
+    const answer =
+      document.createElement("span");
+
+    answer.textContent =
+      `${correctLetter} — ${answerText[correctLetter]}`;
+
+
+    question.appendChild(
+      label
+    );
+
+    question.appendChild(
+      answer
+    );
+
+  }
 
 }
 
@@ -486,6 +729,8 @@ function startProjectorTimer(seconds) {
 
   if (!timer) return;
 
+
+  timer.style.background = "";
 
   let remaining = seconds;
 
@@ -558,7 +803,8 @@ async function loadZoomQuestion(
       data.image_url;
 
     image.alt =
-      data.title || "Zoom challenge";
+      data.title ||
+      "Zoom challenge";
 
     image.style.transform =
       `scale(${getZoomScale(zoomLevel)})`;
@@ -718,19 +964,50 @@ async function loadLeaderboard() {
           : index + 1;
 
 
-      row.innerHTML = `
-        <span class="leaderboard-position">
-          ${medal}
-        </span>
+      const position =
+        document.createElement(
+          "span"
+        );
 
-        <strong>
-          ${escapeHTML(player.nickname)}
-        </strong>
+      position.className =
+        "leaderboard-position";
 
-        <span class="leaderboard-score">
-          ${player.score || 0}
-        </span>
-      `;
+      position.textContent =
+        medal;
+
+
+      const name =
+        document.createElement(
+          "strong"
+        );
+
+      name.textContent =
+        player.nickname;
+
+
+      const score =
+        document.createElement(
+          "span"
+        );
+
+      score.className =
+        "leaderboard-score";
+
+      score.textContent =
+        player.score || 0;
+
+
+      row.appendChild(
+        position
+      );
+
+      row.appendChild(
+        name
+      );
+
+      row.appendChild(
+        score
+      );
 
 
       list.appendChild(row);
@@ -927,25 +1204,6 @@ function subscribeToProjectorPlayers() {
       }
     )
     .subscribe();
-
-}
-
-
-// ==========================================
-// SAFETY — TEXT FROM DATABASE
-// ==========================================
-
-function escapeHTML(value) {
-
-  const div =
-    document.createElement("div");
-
-  div.textContent =
-    value == null
-      ? ""
-      : String(value);
-
-  return div.innerHTML;
 
 }
 
