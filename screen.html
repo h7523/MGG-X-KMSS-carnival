@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Live Screen | MGG Carnival</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;1,700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+
+<body class="projector-page">
+
+  <!-- COLOURFUL BACKGROUND -->
+  <div class="background-shapes" aria-hidden="true">
+    <div class="blob blob-pink"></div>
+    <div class="blob blob-blue"></div>
+    <div class="blob blob-orange"></div>
+    <div class="blob blob-lime"></div>
+
+    <div class="floating-star star-one">✦</div>
+    <div class="floating-star star-two">✦</div>
+    <div class="floating-star star-three">✦</div>
+  </div>
+
+
+  <!-- ======================================
+       LOBBY
+  ======================================= -->
+
+  <main id="projectorLobby" class="projector-screen">
+
+    <header class="projector-header">
+
+      <img
+        src="mgg-logo.png.png"
+        alt="The MGG Society"
+        class="projector-logo"
+      >
+
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        LIVE
+      </div>
+
+    </header>
+
+
+    <section class="projector-lobby-grid">
+
+      <div class="projector-hero">
+
+        <p class="projector-eyebrow">
+          MGG CARNIVAL
+        </p>
+
+        <h1>
+          SCAN.
+          <span>JOIN.</span>
+          PLAY.
+        </h1>
+
+        <p class="projector-description">
+          Join from your phone and get ready
+          to compete live.
+        </p>
+
+      </div>
+
+
+      <div class="qr-card">
+
+        <div id="qrCode"></div>
+
+        <h2>SCAN TO PLAY</h2>
+
+        <p>mgg-carnival.vercel.app</p>
+
+      </div>
+
+    </section>
+
+
+    <section class="live-player-section">
+
+      <div class="player-count-box">
+
+        <span
+          class="player-count-number"
+          id="projectorPlayerCount"
+        >
+          0
+        </span>
+
+        <span class="player-count-label">
+          PLAYERS JOINED
+        </span>
+
+      </div>
+
+
+      <div class="joined-players">
+
+        <p class="joined-title">
+          WHO'S HERE?
+        </p>
+
+        <div
+          id="projectorPlayerNames"
+          class="player-name-cloud"
+        >
+
+          <span class="waiting-player-text">
+            Waiting for players...
+          </span>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ======================================
+       BATTLE ROYALE
+  ======================================= -->
+
+  <main
+    id="projectorBattle"
+    class="projector-screen hidden"
+  >
+
+    <header class="projector-game-header">
+
+      <img
+        src="mgg-logo.png.png"
+        alt="The MGG Society"
+        class="projector-small-logo"
+      >
+
+      <div class="projector-mode">
+        ⚔️ BATTLE ROYALE
+      </div>
+
+      <div class="projector-round">
+        ROUND
+        <strong id="projectorBattleRound">1</strong>
+      </div>
+
+    </header>
+
+
+    <section class="battle-projector-content">
+
+      <div class="battle-stats">
+
+        <div class="battle-stat-card">
+
+          <strong id="projectorAliveCount">
+            0
+          </strong>
+
+          <span>
+            STILL ALIVE
+          </span>
+
+        </div>
+
+
+        <div class="battle-stat-card eliminated-stat">
+
+          <strong id="projectorEliminatedCount">
+            0
+          </strong>
+
+          <span>
+            ELIMINATED
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="projector-question-card">
+
+        <div class="projector-timer">
+          <span id="projectorTimer">
+            10
+          </span>
+        </div>
+
+        <h1 id="projectorQuestion">
+          GET READY...
+        </h1>
+
+        <div
+          id="projectorAnswers"
+          class="projector-answer-grid"
+        ></div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ======================================
+       ZOOMED IN
+  ======================================= -->
+
+  <main
+    id="projectorZoom"
+    class="projector-screen hidden"
+  >
+
+    <header class="projector-game-header">
+
+      <img
+        src="mgg-logo.png.png"
+        alt="The MGG Society"
+        class="projector-small-logo"
+      >
+
+      <div class="projector-mode">
+        🔎 ZOOMED IN
+      </div>
+
+      <div class="projector-round">
+        ROUND
+        <strong id="projectorZoomRound">
+          1
+        </strong>
+      </div>
+
+    </header>
+
+
+    <section class="zoom-projector-layout">
+
+      <div class="zoom-image-frame">
+
+        <img
+          id="projectorZoomImage"
+          src=""
+          alt="Zoom challenge"
+        >
+
+      </div>
+
+
+      <div class="zoom-projector-info">
+
+        <p class="projector-eyebrow">
+          WHAT IS IT?
+        </p>
+
+        <h1 id="projectorZoomPoints">
+          1000
+        </h1>
+
+        <p class="points-word">
+          POINTS
+        </p>
+
+        <p
+          class="zoom-stage-text"
+          id="projectorZoomStage"
+        >
+          EXTREME ZOOM
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ======================================
+       LEADERBOARD
+  ======================================= -->
+
+  <main
+    id="projectorLeaderboard"
+    class="projector-screen hidden"
+  >
+
+    <img
+      src="mgg-logo.png.png"
+      alt="The MGG Society"
+      class="leaderboard-logo"
+    >
+
+    <p class="projector-eyebrow">
+      CURRENT STANDINGS
+    </p>
+
+    <h1 class="leaderboard-title">
+      TOP <span>PLAYERS</span>
+    </h1>
+
+    <div
+      id="leaderboardList"
+      class="leaderboard-list"
+    ></div>
+
+  </main>
+
+
+  <!-- ======================================
+       WINNER
+  ======================================= -->
+
+  <main
+    id="projectorWinner"
+    class="projector-screen hidden"
+  >
+
+    <div class="winner-crown">
+      👑
+    </div>
+
+    <p class="projector-eyebrow">
+      MGG CARNIVAL CHAMPION
+    </p>
+
+    <h1 id="winnerName">
+      WINNER
+    </h1>
+
+    <p class="winner-subtitle">
+      YOU TOOK THE CROWN.
+    </p>
+
+    <img
+      src="mgg-logo.png.png"
+      alt="The MGG Society"
+      class="winner-logo"
+    >
+
+  </main>
+
+
+  <script src="js/config.js"></script>
+  <script src="js/screen.js"></script>
+
+</body>
+</html>
