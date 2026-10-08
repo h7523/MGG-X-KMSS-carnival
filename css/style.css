@@ -1216,3 +1216,877 @@ a {
     scroll-behavior: auto !important;
   }
 }
+
+/* =========================================
+   MGG PROJECTOR SCREEN
+========================================= */
+
+.projector-page {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.projector-screen {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  min-height: 100vh;
+
+  padding: 35px 55px;
+
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+}
+
+
+/* =========================================
+   PROJECTOR HEADER
+========================================= */
+
+.projector-header,
+.projector-game-header {
+  position: absolute;
+
+  top: 28px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: calc(100% - 110px);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.projector-logo {
+  width: 180px;
+  height: 110px;
+
+  object-fit: contain;
+
+  filter:
+    drop-shadow(0 10px 15px rgba(100, 0, 20, .15));
+
+  animation: projectorLogoFloat 4s ease-in-out infinite;
+}
+
+@keyframes projectorLogoFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+
+  50% {
+    transform: translateY(-7px) rotate(1deg);
+  }
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 11px 18px;
+
+  border: 2px solid #171717;
+  border-radius: 100px;
+
+  background: white;
+
+  box-shadow: 4px 4px 0 #171717;
+
+  font-size: 12px;
+  font-weight: 900;
+
+  letter-spacing: 2px;
+}
+
+
+/* =========================================
+   PROJECTOR LOBBY
+========================================= */
+
+.projector-lobby-grid {
+  width: min(1180px, 92%);
+
+  margin: 60px auto 20px;
+
+  display: grid;
+
+  grid-template-columns: 1.3fr .7fr;
+
+  gap: 70px;
+
+  align-items: center;
+}
+
+.projector-hero {
+  text-align: left;
+}
+
+.projector-eyebrow {
+  margin: 0 0 15px;
+
+  color: #c40022;
+
+  font-size: 13px;
+  font-weight: 900;
+
+  letter-spacing: 4px;
+}
+
+.projector-hero h1 {
+  margin: 0;
+
+  font-size: clamp(70px, 9vw, 135px);
+
+  line-height: .75;
+
+  letter-spacing: -7px;
+
+  font-weight: 900;
+}
+
+.projector-hero h1 span {
+  display: block;
+
+  margin: 17px 0;
+
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+
+  color: #c40022;
+
+  transform: rotate(-3deg);
+
+  text-shadow:
+    5px 5px 0 #ffb4d4;
+}
+
+.projector-description {
+  width: min(100%, 540px);
+
+  margin-top: 35px;
+
+  font-size: 19px;
+  line-height: 1.55;
+
+  font-weight: 600;
+
+  color: #5b5555;
+}
+
+
+/* =========================================
+   QR CARD
+========================================= */
+
+.qr-card {
+  padding: 30px;
+
+  text-align: center;
+
+  border: 3px solid #171717;
+  border-radius: 30px;
+
+  background: white;
+
+  box-shadow: 10px 10px 0 #171717;
+
+  transform: rotate(2deg);
+
+  animation: qrFloat 3.5s ease-in-out infinite;
+}
+
+@keyframes qrFloat {
+  0%, 100% {
+    transform: rotate(2deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(-1deg) translateY(-10px);
+  }
+}
+
+#qrCode {
+  width: 230px;
+  height: 230px;
+
+  margin: auto;
+
+  display: grid;
+  place-items: center;
+
+  padding: 10px;
+
+  background: white;
+}
+
+#qrCode img,
+#qrCode canvas {
+  max-width: 100%;
+}
+
+.qr-card h2 {
+  margin: 20px 0 5px;
+
+  font-size: 23px;
+
+  font-weight: 900;
+}
+
+.qr-card p {
+  margin: 0;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  color: #777;
+}
+
+
+/* =========================================
+   LIVE PLAYERS
+========================================= */
+
+.live-player-section {
+  width: min(1180px, 92%);
+
+  margin: 25px auto 0;
+
+  display: grid;
+
+  grid-template-columns: 220px 1fr;
+
+  gap: 20px;
+}
+
+.player-count-box {
+  min-height: 130px;
+
+  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  border: 3px solid #171717;
+  border-radius: 24px;
+
+  background: #ffdc45;
+
+  box-shadow: 7px 7px 0 #171717;
+}
+
+.player-count-number {
+  font-size: 58px;
+  line-height: .9;
+
+  font-weight: 900;
+}
+
+.player-count-label {
+  margin-top: 10px;
+
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: 1.5px;
+}
+
+.joined-players {
+  min-height: 130px;
+
+  padding: 18px 22px;
+
+  border: 3px solid #171717;
+  border-radius: 24px;
+
+  background: rgba(255,255,255,.88);
+
+  box-shadow: 7px 7px 0 #171717;
+}
+
+.joined-title {
+  margin: 0 0 13px;
+
+  font-size: 10px;
+  font-weight: 900;
+
+  letter-spacing: 2px;
+
+  color: #c40022;
+}
+
+.player-name-cloud {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 9px;
+}
+
+.projector-player-chip {
+  padding: 8px 13px;
+
+  border: 2px solid #171717;
+  border-radius: 100px;
+
+  background: #ffb3d5;
+
+  box-shadow: 2px 2px 0 #171717;
+
+  font-size: 12px;
+  font-weight: 900;
+
+  animation: playerArrival .4s
+    cubic-bezier(.17,.89,.32,1.4);
+}
+
+.projector-player-chip:nth-child(4n + 2) {
+  background: #a9c9ff;
+}
+
+.projector-player-chip:nth-child(4n + 3) {
+  background: #ffcf72;
+}
+
+.projector-player-chip:nth-child(4n + 4) {
+  background: #d5ef72;
+}
+
+@keyframes playerArrival {
+  from {
+    opacity: 0;
+    transform: scale(.5) translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.waiting-player-text {
+  font-size: 14px;
+  font-weight: 700;
+
+  color: #777;
+}
+
+
+/* =========================================
+   PROJECTOR GAME HEADER
+========================================= */
+
+.projector-game-header {
+  padding: 12px 18px;
+
+  border: 3px solid #171717;
+  border-radius: 20px;
+
+  background: rgba(255,255,255,.9);
+
+  box-shadow: 6px 6px 0 #171717;
+}
+
+.projector-small-logo {
+  width: 105px;
+  height: 60px;
+
+  object-fit: contain;
+}
+
+.projector-mode {
+  font-size: 17px;
+  font-weight: 900;
+
+  letter-spacing: 2px;
+}
+
+.projector-round {
+  text-align: right;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.projector-round strong {
+  display: block;
+
+  font-size: 25px;
+
+  color: #c40022;
+}
+
+
+/* =========================================
+   BATTLE ROYALE PROJECTOR
+========================================= */
+
+.battle-projector-content {
+  width: min(1150px, 94%);
+
+  margin: 110px auto 0;
+}
+
+.battle-stats {
+  display: flex;
+
+  justify-content: center;
+
+  gap: 15px;
+
+  margin-bottom: 25px;
+}
+
+.battle-stat-card {
+  min-width: 170px;
+
+  padding: 15px 25px;
+
+  text-align: center;
+
+  border: 3px solid #171717;
+  border-radius: 18px;
+
+  background: #d5ef72;
+
+  box-shadow: 5px 5px 0 #171717;
+}
+
+.battle-stat-card strong {
+  display: block;
+
+  font-size: 35px;
+  line-height: 1;
+}
+
+.battle-stat-card span {
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: 1px;
+}
+
+.eliminated-stat {
+  background: #ffb3d5;
+}
+
+.projector-question-card {
+  position: relative;
+
+  padding: 55px 45px 35px;
+
+  border: 3px solid #171717;
+  border-radius: 30px;
+
+  background: rgba(255,255,255,.92);
+
+  box-shadow: 10px 10px 0 #171717;
+}
+
+.projector-timer {
+  position: absolute;
+
+  top: -42px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: 84px;
+  height: 84px;
+
+  display: grid;
+  place-items: center;
+
+  border: 3px solid #171717;
+  border-radius: 50%;
+
+  background: #ffdc45;
+
+  box-shadow: 5px 5px 0 #171717;
+
+  font-size: 31px;
+  font-weight: 900;
+
+  animation: timerBounce 1s ease-in-out infinite;
+}
+
+.projector-question-card h1 {
+  width: min(900px, 100%);
+
+  margin: 10px auto 32px;
+
+  text-align: center;
+
+  font-size: clamp(35px, 4.3vw, 60px);
+
+  line-height: 1.05;
+
+  letter-spacing: -2px;
+}
+
+.projector-answer-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 15px;
+}
+
+.projector-answer-card {
+  min-height: 85px;
+
+  padding: 18px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  border: 3px solid #171717;
+  border-radius: 18px;
+
+  background: #ffb3d5;
+
+  box-shadow: 5px 5px 0 #171717;
+}
+
+.projector-answer-card:nth-child(2) {
+  background: #a9c9ff;
+}
+
+.projector-answer-card:nth-child(3) {
+  background: #ffcf72;
+}
+
+.projector-answer-card:nth-child(4) {
+  background: #d5ef72;
+}
+
+.projector-answer-card span {
+  min-width: 42px;
+  height: 42px;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid #171717;
+  border-radius: 50%;
+
+  background: white;
+
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.projector-answer-card strong {
+  font-size: 18px;
+}
+
+
+/* =========================================
+   ZOOMED IN PROJECTOR
+========================================= */
+
+.zoom-projector-layout {
+  width: min(1150px, 94%);
+
+  margin: 110px auto 0;
+
+  display: grid;
+
+  grid-template-columns: 1.3fr .7fr;
+
+  gap: 40px;
+
+  align-items: center;
+}
+
+.zoom-image-frame {
+  height: min(65vh, 620px);
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 4px solid #171717;
+  border-radius: 30px;
+
+  background: white;
+
+  box-shadow: 10px 10px 0 #171717;
+}
+
+.zoom-image-frame img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition:
+    transform 1s cubic-bezier(.22,.61,.36,1);
+}
+
+.zoom-projector-info {
+  text-align: center;
+
+  padding: 35px;
+
+  border: 3px solid #171717;
+  border-radius: 28px;
+
+  background: #ffdc45;
+
+  box-shadow: 8px 8px 0 #171717;
+}
+
+.zoom-projector-info h1 {
+  margin: 5px 0 0;
+
+  font-size: 95px;
+
+  line-height: .85;
+
+  font-weight: 900;
+}
+
+.points-word {
+  margin: 10px 0 25px;
+
+  font-size: 13px;
+  font-weight: 900;
+
+  letter-spacing: 4px;
+}
+
+.zoom-stage-text {
+  display: inline-block;
+
+  margin: 0;
+
+  padding: 10px 15px;
+
+  border: 2px solid #171717;
+  border-radius: 100px;
+
+  background: white;
+
+  font-size: 11px;
+  font-weight: 900;
+
+  letter-spacing: 1px;
+}
+
+
+/* =========================================
+   LEADERBOARD
+========================================= */
+
+#projectorLeaderboard {
+  align-items: center;
+
+  text-align: center;
+}
+
+.leaderboard-logo {
+  width: 160px;
+  height: 100px;
+
+  margin-bottom: 8px;
+
+  object-fit: contain;
+}
+
+.leaderboard-title {
+  margin: 0 0 30px;
+
+  font-size: clamp(55px, 8vw, 100px);
+
+  line-height: .85;
+
+  letter-spacing: -5px;
+}
+
+.leaderboard-title span {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+
+  color: #c40022;
+}
+
+.leaderboard-list {
+  width: min(750px, 90%);
+
+  display: grid;
+
+  gap: 10px;
+}
+
+.leaderboard-row {
+  min-height: 68px;
+
+  padding: 12px 20px;
+
+  display: grid;
+
+  grid-template-columns: 70px 1fr 120px;
+
+  align-items: center;
+
+  text-align: left;
+
+  border: 3px solid #171717;
+  border-radius: 17px;
+
+  background: white;
+
+  box-shadow: 5px 5px 0 #171717;
+}
+
+.leaderboard-row:first-child {
+  background: #ffdc45;
+
+  transform: scale(1.04);
+}
+
+.leaderboard-position {
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.leaderboard-row strong {
+  font-size: 20px;
+}
+
+.leaderboard-score {
+  text-align: right;
+
+  font-size: 23px;
+  font-weight: 900;
+
+  color: #c40022;
+}
+
+
+/* =========================================
+   WINNER SCREEN
+========================================= */
+
+#projectorWinner {
+  align-items: center;
+
+  text-align: center;
+}
+
+.winner-crown {
+  font-size: 100px;
+
+  animation: crownBounce 1.1s ease-in-out infinite;
+}
+
+@keyframes crownBounce {
+  0%, 100% {
+    transform: translateY(0) rotate(-5deg);
+  }
+
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+#projectorWinner h1 {
+  margin: 5px 0;
+
+  max-width: 1000px;
+
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+
+  font-size: clamp(75px, 11vw, 150px);
+
+  line-height: .8;
+
+  color: #c40022;
+
+  text-shadow:
+    6px 6px 0 #ffb4d4;
+}
+
+.winner-subtitle {
+  margin: 25px 0;
+
+  font-size: 17px;
+  font-weight: 900;
+
+  letter-spacing: 4px;
+}
+
+.winner-logo {
+  width: 150px;
+  height: 95px;
+
+  object-fit: contain;
+}
+
+
+/* =========================================
+   PROJECTOR RESPONSIVE
+========================================= */
+
+@media (max-width: 900px) {
+
+  .projector-screen {
+    padding: 25px;
+  }
+
+  .projector-header,
+  .projector-game-header {
+    width: calc(100% - 50px);
+  }
+
+  .projector-lobby-grid {
+    grid-template-columns: 1fr;
+
+    gap: 25px;
+
+    text-align: center;
+  }
+
+  .projector-hero {
+    text-align: center;
+  }
+
+  .projector-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .qr-card {
+    width: 300px;
+
+    margin: auto;
+  }
+
+  .live-player-section {
+    grid-template-columns: 1fr;
+  }
+
+  .zoom-projector-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .zoom-image-frame {
+    height: 45vh;
+  }
+}
