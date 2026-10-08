@@ -1,131 +1,148 @@
-let hostState = null;
+// ======================================================
+// MGG CARNIVAL — HOST CONTROLLER
+// ======================================================
+
+let gameState = null;
+let players = [];
 let battleQuestions = [];
 let zoomQuestions = [];
 
 
-// ==========================================
+// ======================================================
 // HELPERS
-// ==========================================
+// ======================================================
 
-function hostMessage(message) {
-  const element =
-    document.getElementById("hostMessage");
+function byId(id) {
+  return document.getElementById(id);
+}
+
+function setHostMessage(message) {
+  const element = byId("hostStatusMessage");
 
   if (element) {
     element.textContent = message;
   }
+
+  console.log("[MGG HOST]", message);
+}
+
+function normaliseAnswer(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 
-function escapeHTML(value) {
-  const div = document.createElement("div");
-
-  div.textContent =
-    value == null ? "" : String(value);
-
-  return div.innerHTML;
-}
-
-
-// ==========================================
+// ======================================================
 // LOAD GAME STATE
-// ==========================================
+// ======================================================
 
-async function loadHostState() {
-
-  const { data, error } =
-    await supabaseClient
-      .from("game_state")
-      .select("*")
-      .eq("id", 1)
-      .single();
+async function loadGameState() {
+  const { data, error } = await supabaseClient
+    .from("game_state")
+    .select("*")
+    .eq("id", 1)
+    .single();
 
   if (error) {
     console.error(error);
-    hostMessage("Could not load game state.");
+    setHostMessage("Could not load game state.");
     return;
   }
 
-  hostState = data;
-
-  updateHostStateDisplay();
+  gameState = data;
+  updateHostDisplay();
 }
 
 
-// ==========================================
-// UPDATE STATE DISPLAY
-// ==========================================
-
-function updateHostStateDisplay() {
-
-  if (!hostState) return;
-
-  const game =
-    document.getElementById("hostCurrentGame");
-
-  const round =
-    document.getElementById("hostRound");
-
-  if (game) {
-    game.textContent =
-      (hostState.game_mode || "lobby")
-        .toUpperCase();
-  }
-
-  if (round) {
-    round.textContent =
-      hostState.round_number || 0;
-  }
-
-}
-
-
-// ==========================================
+// ======================================================
 // LOAD PLAYERS
-// ==========================================
+// ======================================================
 
-async function loadHostPlayers() {
-
-  const { data, error } =
-    await supabaseClient
-      .from("players")
-      .select("*")
-      .order("joined_at", {
-        ascending: true
-      });
+async function loadPlayers() {
+  const { data, error } = await supabaseClient
+    .from("players")
+    .select("*")
+    .order("joined_at", {
+      ascending: true
+    });
 
   if (error) {
     console.error(error);
-    hostMessage("Could not load players.");
-    return [];
+    return;
   }
 
-  const players = data || [];
+  players = data || [];
 
-  updateHostPlayerDisplay(players);
-
-  return players;
+  updateHostDisplay();
+  renderPlayerList();
 }
 
 
-// ==========================================
-// PLAYER DISPLAY
-// ==========================================
+// ======================================================
+// LOAD QUESTIONS
+// ======================================================
 
-function updateHostPlayerDisplay(players) {
+async function loadQuestions() {
+  const battleResult = await supabaseClient
+    .from("battle_questions")
+    .select("*")
+    .order("id", {
+      ascending: true
+    });
 
+  if (battleResult.error) {
+    console.error(
+      "Battle questions:",
+      battleResult.error
+    );
+  } else {
+    battleQuestions =
+      battleResult.data || [];
+  }
+
+
+  const zoomResult = await supabaseClient
+    .from("zoom_questions")
+    .select("*")
+    .order("id", {
+      ascending: true
+    });
+
+  if (zoomResult.error) {
+    console.error(
+      "Zoom questions:",
+      zoomResult.error
+    );
+  } else {
+    zoomQuestions =
+      zoomResult.data || [];
+  }
+
+  updateHostDisplay();
+}
+
+
+// ======================================================
+// HOST DISPLAY
+// ======================================================
+
+function updateHostDisplay() {
   const playerCount =
-    document.getElementById("hostPlayerCount");
+    byId("hostPlayerCount");
 
   const aliveCount =
-    document.getElementById("hostAliveCount");
+    byId("hostAliveCount");
 
-  const list =
-    document.getElementById("hostPlayerList");
+  const game =
+    byId("hostCurrentGame");
 
-
-  const alive =
-    players.filter(player => player.alive);
+  const round =
+    byId("hostRound");
 
 
   if (playerCount) {
@@ -133,27 +150,98 @@ function updateHostPlayerDisplay(players) {
       players.length;
   }
 
+
+  const alive =
+    players.filter(
+      player => player.alive
+    ).length;
+
+
   if (aliveCount) {
-    aliveCount.textContent =
-      alive.length;
+    aliveCount.textContent = alive;
   }
 
-  if (!list) return;
+
+  if (game) {
+    if (!gameState) {
+      game.textContent = "LOBBY";
+    } else if (
+      gameState.game_mode === "battle"
+    ) {
+      game.textContent =
+        "BATTLE ROYALE";
+    } else if (
+      gameState.game_mode === "zoom"
+    ) {
+      game.textContent =
+        "ZOOMED IN";
+    } else if (
+      gameState.game_mode ===
+      "leaderboard"
+    ) {
+      game.textContent =
+        "LEADERBOARD";
+    } else if (
+      gameState.game_mode === "winner"
+    ) {
+      game.textContent =
+        "WINNER";
+    } else {
+      game.textContent =
+        "LOBBY";
+    }
+  }
+
+
+  if (round) {
+    round.textContent =
+      gameState?.round_number || 0;
+  }
+
+
+  updateBattleQuestionDisplay();
+  updateZoomDisplay();
+}
+
+
+// ======================================================
+// PLAYER LIST
+// ======================================================
+
+function renderPlayerList() {
+  const container =
+    byId("hostPlayerList");
+
+  if (!container) return;
+
+  container.innerHTML = "";
 
 
   if (players.length === 0) {
-    list.innerHTML =
-      "<p>No players yet.</p>";
+    container.innerHTML = `
+      <p>No players have joined yet.</p>
+    `;
 
     return;
   }
 
 
-  list.innerHTML = "";
+  const sorted = [...players].sort(
+    (a, b) => {
+
+      if (a.alive !== b.alive) {
+        return a.alive ? -1 : 1;
+      }
+
+      return (
+        (b.score || 0) -
+        (a.score || 0)
+      );
+    }
+  );
 
 
-  players.forEach(player => {
-
+  sorted.forEach(player => {
     const row =
       document.createElement("div");
 
@@ -161,86 +249,46 @@ function updateHostPlayerDisplay(players) {
       "host-player-row";
 
 
-    row.innerHTML = `
-      <div>
-        <strong>
-          ${escapeHTML(player.nickname)}
-        </strong>
+    const name =
+      document.createElement("strong");
 
-        <span>
-          ${
-            player.alive
-              ? "🔥 ALIVE"
-              : "💀 ELIMINATED"
-          }
-        </span>
-      </div>
-
-      <strong>
-        ${player.score || 0} pts
-      </strong>
-    `;
+    name.textContent =
+      player.nickname;
 
 
-    list.appendChild(row);
+    const details =
+      document.createElement("span");
 
+    details.textContent =
+      player.alive
+        ? `🔥 ALIVE • ${player.score || 0} pts`
+        : `💀 ELIMINATED • ${player.score || 0} pts`;
+
+
+    row.appendChild(name);
+    row.appendChild(details);
+
+    container.appendChild(row);
   });
-
 }
 
 
-// ==========================================
-// LOAD QUESTIONS
-// ==========================================
-
-async function loadQuestions() {
-
-  const battleResult =
-    await supabaseClient
-      .from("battle_questions")
-      .select("*")
-      .order("id", {
-        ascending: true
-      });
-
-
-  if (!battleResult.error) {
-    battleQuestions =
-      battleResult.data || [];
-  }
-
-
-  const zoomResult =
-    await supabaseClient
-      .from("zoom_questions")
-      .select("*")
-      .order("id", {
-        ascending: true
-      });
-
-
-  if (!zoomResult.error) {
-    zoomQuestions =
-      zoomResult.data || [];
-  }
-
-}
-
-
-// ==========================================
+// ======================================================
 // UPDATE GAME STATE
-// ==========================================
+// ======================================================
 
-async function updateGameState(changes) {
+async function updateGameState(updates) {
+  const payload = {
+    ...updates,
+    updated_at:
+      new Date().toISOString()
+  };
+
 
   const { data, error } =
     await supabaseClient
       .from("game_state")
-      .update({
-        ...changes,
-        updated_at:
-          new Date().toISOString()
-      })
+      .update(payload)
       .eq("id", 1)
       .select()
       .single();
@@ -248,684 +296,73 @@ async function updateGameState(changes) {
 
   if (error) {
     console.error(error);
-
-    hostMessage(
-      "Something went wrong updating the game."
+    setHostMessage(
+      "Could not update the game."
     );
 
     return null;
   }
 
 
-  hostState = data;
+  gameState = data;
 
-  updateHostStateDisplay();
+  updateHostDisplay();
 
   return data;
 }
 
 
-// ==========================================
-// START BATTLE
-// ==========================================
-
-async function startBattle() {
-
-  if (battleQuestions.length === 0) {
-    hostMessage(
-      "No Battle Royale questions have been added yet."
-    );
-
-    return;
-  }
-
-
-  await supabaseClient
-    .from("players")
-    .update({
-      alive: true
-    })
-    .neq("id", "00000000-0000-0000-0000-000000000000");
-
-
-  await updateGameState({
-    game_mode: "battle",
-    status: "question",
-    current_question:
-      battleQuestions[0].id,
-    round_number: 1,
-    zoom_level: 1
-  });
-
-
-  document.getElementById(
-    "hostBattleQuestion"
-  ).textContent =
-    battleQuestions[0].question;
-
-
-  await loadHostPlayers();
-
-
-  hostMessage(
-    "⚔️ Battle Royale started!"
-  );
-
-}
-
-
-// ==========================================
-// NEXT BATTLE QUESTION
-// ==========================================
-
-async function nextBattleQuestion() {
-
-  if (
-    !hostState ||
-    hostState.game_mode !== "battle"
-  ) {
-
-    hostMessage(
-      "Start Battle Royale first."
-    );
-
-    return;
-  }
-
-
-  const currentIndex =
-    battleQuestions.findIndex(
-      question =>
-        question.id ===
-        hostState.current_question
-    );
-
-
-  const nextIndex =
-    currentIndex + 1;
-
-
-  if (
-    nextIndex >=
-    battleQuestions.length
-  ) {
-
-    hostMessage(
-      "That was the last Battle Royale question."
-    );
-
-    return;
-  }
-
-
-  const nextQuestion =
-    battleQuestions[nextIndex];
-
-
-  await updateGameState({
-    status: "question",
-    current_question:
-      nextQuestion.id,
-    round_number:
-      (hostState.round_number || 0) + 1
-  });
-
-
-  document.getElementById(
-    "hostBattleQuestion"
-  ).textContent =
-    nextQuestion.question;
-
-
-  hostMessage(
-    "Next Battle Royale question is live."
-  );
-
-}
-
-
-// ==========================================
-// MARK BATTLE ANSWERS
-// ==========================================
-
-async function revealBattleAnswers() {
-
-  if (
-    !hostState ||
-    hostState.game_mode !== "battle"
-  ) {
-
-    hostMessage(
-      "Battle Royale is not running."
-    );
-
-    return;
-  }
-
-
-  const question =
-    battleQuestions.find(
-      item =>
-        item.id ===
-        hostState.current_question
-    );
-
-
-  if (!question) {
-    hostMessage(
-      "Could not find this question."
-    );
-
-    return;
-  }
-
-
-  const { data: players } =
-    await supabaseClient
-      .from("players")
-      .select("*")
-      .eq("alive", true);
-
-
-  const { data: answers } =
-    await supabaseClient
-      .from("answers")
-      .select("*")
-      .eq("game_mode", "battle")
-      .eq(
-        "question_id",
-        hostState.current_question
-      );
-
-
-  const answerList =
-    answers || [];
-
-
-  for (const player of players || []) {
-
-    const answer =
-      answerList.find(
-        item =>
-          item.player_id ===
-          player.id
-      );
-
-
-    const survived =
-      answer &&
-      String(answer.answer)
-        .trim()
-        .toUpperCase() ===
-      String(question.correct_answer)
-        .trim()
-        .toUpperCase();
-
-
-    if (!survived) {
-
-      await supabaseClient
-        .from("players")
-        .update({
-          alive: false
-        })
-        .eq("id", player.id);
-
-    }
-
-  }
-
-
-  await updateGameState({
-    status: "result"
-  });
-
-
-  await loadHostPlayers();
-
-
-  hostMessage(
-    `Answer revealed: ${question.correct_answer}`
-  );
-
-}
-
-
-// ==========================================
-// REDEMPTION
-// ==========================================
-
-async function redemptionRound() {
-
+// ======================================================
+// DELETE ANSWERS FOR A GAME
+// ======================================================
+
+async function clearGameAnswers(
+  gameMode
+) {
   const { error } =
     await supabaseClient
-      .from("players")
-      .update({
-        alive: true
-      })
-      .eq("alive", false);
-
-
-  if (error) {
-    console.error(error);
-
-    hostMessage(
-      "Could not revive players."
-    );
-
-    return;
-  }
-
-
-  await loadHostPlayers();
-
-
-  hostMessage(
-    "✨ Redemption! Eliminated players are back."
-  );
-
-}
-
-
-// ==========================================
-// START ZOOMED IN
-// ==========================================
-
-async function startZoom() {
-
-  if (zoomQuestions.length === 0) {
-
-    hostMessage(
-      "No Zoomed In images have been added yet."
-    );
-
-    return;
-  }
-
-
-  await updateGameState({
-    game_mode: "zoom",
-    status: "question",
-    current_question:
-      zoomQuestions[0].id,
-    round_number: 1,
-    zoom_level: 1
-  });
-
-
-  document.getElementById(
-    "hostZoomQuestion"
-  ).textContent =
-    zoomQuestions[0].title;
-
-
-  updateZoomHostPoints(1);
-
-
-  hostMessage(
-    "🔎 Zoomed In started!"
-  );
-
-}
-
-
-// ==========================================
-// ZOOM OUT
-// ==========================================
-
-async function zoomOut() {
-
-  if (
-    !hostState ||
-    hostState.game_mode !== "zoom"
-  ) {
-
-    hostMessage(
-      "Start Zoomed In first."
-    );
-
-    return;
-  }
-
-
-  const current =
-    hostState.zoom_level || 1;
-
-
-  if (current >= 4) {
-
-    hostMessage(
-      "This is already the final zoom level."
-    );
-
-    return;
-  }
-
-
-  const next =
-    current + 1;
-
-
-  await updateGameState({
-    zoom_level: next
-  });
-
-
-  updateZoomHostPoints(next);
-
-
-  hostMessage(
-    `Zoom level ${next} shown.`
-  );
-
-}
-
-
-// ==========================================
-// ZOOM POINT DISPLAY
-// ==========================================
-
-function updateZoomHostPoints(level) {
-
-  const points = {
-    1: 1000,
-    2: 750,
-    3: 500,
-    4: 250
-  };
-
-
-  const element =
-    document.getElementById(
-      "hostZoomPoints"
-    );
-
-
-  if (element) {
-
-    element.textContent =
-      `${points[level] || 250} POINTS`;
-
-  }
-
-}
-
-
-// ==========================================
-// MARK ZOOM ANSWERS
-// ==========================================
-
-async function revealZoomAnswers() {
-
-  if (
-    !hostState ||
-    hostState.game_mode !== "zoom"
-  ) {
-
-    hostMessage(
-      "Zoomed In is not running."
-    );
-
-    return;
-  }
-
-
-  const question =
-    zoomQuestions.find(
-      item =>
-        item.id ===
-        hostState.current_question
-    );
-
-
-  if (!question) {
-
-    hostMessage(
-      "Could not find this image."
-    );
-
-    return;
-  }
-
-
-  const { data: answers, error } =
-    await supabaseClient
       .from("answers")
-      .select("*")
-      .eq("game_mode", "zoom")
+      .delete()
       .eq(
-        "question_id",
-        hostState.current_question
+        "game_mode",
+        gameMode
       );
 
 
   if (error) {
-
-    console.error(error);
-
-    hostMessage(
-      "Could not load answers."
+    console.error(
+      "Could not clear old answers:",
+      error
     );
 
-    return;
+    setHostMessage(
+      "Old answers could not be cleared. Reset may be required."
+    );
+
+    return false;
   }
 
-
-  for (const answer of answers || []) {
-
-    const correct =
-      String(answer.answer)
-        .trim()
-        .toLowerCase() ===
-      String(question.correct_answer)
-        .trim()
-        .toLowerCase();
+  return true;
+}
 
 
-    let awardedPoints = 0;
+// ======================================================
+// REVIVE ALL PLAYERS
+// ======================================================
 
-
-    if (correct) {
-
-      awardedPoints =
-        answer.points || 0;
-
-
-      const { data: player } =
-        await supabaseClient
-          .from("players")
-          .select("score")
-          .eq(
-            "id",
-            answer.player_id
-          )
-          .single();
-
-
-      if (player) {
-
-        await supabaseClient
-          .from("players")
-          .update({
-            score:
-              (player.score || 0) +
-              awardedPoints
-          })
-          .eq(
-            "id",
-            answer.player_id
-          );
-
-      }
-
+async function reviveAllPlayers(
+  showMessage = true
+) {
+  if (players.length === 0) {
+    if (showMessage) {
+      setHostMessage(
+        "There are no players to revive."
+      );
     }
 
-
-    await supabaseClient
-      .from("answers")
-      .update({
-        correct: correct,
-        points: awardedPoints
-      })
-      .eq("id", answer.id);
-
-  }
-
-
-  await updateGameState({
-    status: "result"
-  });
-
-
-  await loadHostPlayers();
-
-
-  hostMessage(
-    `Correct answer: ${question.correct_answer}`
-  );
-
-}
-
-
-// ==========================================
-// NEXT ZOOM IMAGE
-// ==========================================
-
-async function nextZoomQuestion() {
-
-  if (
-    !hostState ||
-    hostState.game_mode !== "zoom"
-  ) {
-
-    hostMessage(
-      "Start Zoomed In first."
-    );
-
     return;
   }
 
-
-  const currentIndex =
-    zoomQuestions.findIndex(
-      question =>
-        question.id ===
-        hostState.current_question
-    );
-
-
-  const nextIndex =
-    currentIndex + 1;
-
-
-  if (
-    nextIndex >=
-    zoomQuestions.length
-  ) {
-
-    hostMessage(
-      "That was the final Zoomed In image."
-    );
-
-    return;
-  }
-
-
-  const nextQuestion =
-    zoomQuestions[nextIndex];
-
-
-  await updateGameState({
-    status: "question",
-    current_question:
-      nextQuestion.id,
-    round_number:
-      (hostState.round_number || 0) + 1,
-    zoom_level: 1
-  });
-
-
-  document.getElementById(
-    "hostZoomQuestion"
-  ).textContent =
-    nextQuestion.title;
-
-
-  updateZoomHostPoints(1);
-
-
-  hostMessage(
-    "Next Zoomed In image is live."
-  );
-
-}
-
-
-// ==========================================
-// SHOW LOBBY
-// ==========================================
-
-async function showLobby() {
-
-  await updateGameState({
-    game_mode: "lobby",
-    status: "waiting",
-    current_question: 0,
-    round_number: 0,
-    zoom_level: 1
-  });
-
-
-  hostMessage(
-    "Projector returned to lobby."
-  );
-
-}
-
-
-// ==========================================
-// SHOW LEADERBOARD
-// ==========================================
-
-async function showLeaderboard() {
-
-  await updateGameState({
-    game_mode: "leaderboard",
-    status: "display"
-  });
-
-
-  hostMessage(
-    "🏆 Leaderboard is on the projector."
-  );
-
-}
-
-
-// ==========================================
-// SHOW WINNER
-// ==========================================
-
-async function showWinner() {
-
-  await updateGameState({
-    game_mode: "winner",
-    status: "display"
-  });
-
-
-  hostMessage(
-    "👑 Winner screen launched!"
-  );
-
-}
-
-
-// ==========================================
-// REVIVE ALL
-// ==========================================
-
-async function reviveAllPlayers() {
 
   const { error } =
     await supabaseClient
@@ -942,7 +379,7 @@ async function reviveAllPlayers() {
   if (error) {
     console.error(error);
 
-    hostMessage(
+    setHostMessage(
       "Could not revive players."
     );
 
@@ -950,27 +387,26 @@ async function reviveAllPlayers() {
   }
 
 
-  await loadHostPlayers();
+  await loadPlayers();
 
 
-  hostMessage(
-    "All players revived."
-  );
-
+  if (showMessage) {
+    setHostMessage(
+      "All players revived."
+    );
+  }
 }
 
 
-// ==========================================
+// ======================================================
 // RESET SCORES
-// ==========================================
+// ======================================================
 
 async function resetScores() {
-
   const confirmed =
-    confirm(
+    window.confirm(
       "Reset every player's score to 0?"
     );
-
 
   if (!confirmed) return;
 
@@ -990,7 +426,7 @@ async function resetScores() {
   if (error) {
     console.error(error);
 
-    hostMessage(
+    setHostMessage(
       "Could not reset scores."
     );
 
@@ -998,29 +434,1107 @@ async function resetScores() {
   }
 
 
-  await loadHostPlayers();
+  await loadPlayers();
 
-
-  hostMessage(
-    "Scores reset to 0."
+  setHostMessage(
+    "All scores reset."
   );
-
 }
 
 
-// ==========================================
-// RESET EVERYTHING
-// ==========================================
+// ======================================================
+// BATTLE — CURRENT QUESTION DISPLAY
+// ======================================================
 
-async function resetEverything() {
+function updateBattleQuestionDisplay() {
+  const element =
+    byId("hostBattleQuestion");
 
-  const confirmed =
-    confirm(
-      "Reset the entire carnival game? This will delete all players and answers."
+  if (!element) return;
+
+
+  if (
+    !gameState ||
+    gameState.game_mode !== "battle"
+  ) {
+    element.textContent =
+      "No Battle Royale question active.";
+
+    return;
+  }
+
+
+  const question =
+    battleQuestions.find(
+      item =>
+        Number(item.id) ===
+        Number(
+          gameState.current_question
+        )
     );
 
 
+  if (!question) {
+    element.textContent =
+      "Question not found.";
+
+    return;
+  }
+
+
+  element.textContent =
+    `Round ${gameState.round_number}: ${question.question}`;
+}
+
+
+// ======================================================
+// BATTLE — START
+// ======================================================
+
+async function startBattle() {
+  if (battleQuestions.length === 0) {
+    setHostMessage(
+      "No Battle Royale questions found. Refresh the host page if you just added them."
+    );
+
+    return;
+  }
+
+
+  if (players.length === 0) {
+    setHostMessage(
+      "No players have joined yet."
+    );
+
+    return;
+  }
+
+
+  setHostMessage(
+    "Preparing Battle Royale..."
+  );
+
+
+  const cleared =
+    await clearGameAnswers(
+      "battle"
+    );
+
+
+  if (!cleared) {
+    return;
+  }
+
+
+  await reviveAllPlayers(false);
+
+
+  const firstQuestion =
+    battleQuestions[0];
+
+
+  await updateGameState({
+    game_mode: "battle",
+    status: "question",
+    current_question:
+      firstQuestion.id,
+    round_number: 1,
+    zoom_level: 1
+  });
+
+
+  setHostMessage(
+    "Battle Royale started! 🔥"
+  );
+}
+
+
+// ======================================================
+// BATTLE — NEXT QUESTION
+// ======================================================
+
+async function nextBattleQuestion() {
+  if (
+    !gameState ||
+    gameState.game_mode !== "battle"
+  ) {
+    setHostMessage(
+      "Start Battle Royale first."
+    );
+
+    return;
+  }
+
+
+  await loadPlayers();
+
+
+  const alivePlayers =
+    players.filter(
+      player => player.alive
+    );
+
+
+  // Winner already exists
+  if (alivePlayers.length === 1) {
+    await crownBattleWinner(
+      alivePlayers[0]
+    );
+
+    return;
+  }
+
+
+  // Everyone eliminated
+  if (alivePlayers.length === 0) {
+    setHostMessage(
+      "Everyone was eliminated! Use Redemption Round to bring them back."
+    );
+
+    return;
+  }
+
+
+  const currentIndex =
+    battleQuestions.findIndex(
+      question =>
+        Number(question.id) ===
+        Number(
+          gameState.current_question
+        )
+    );
+
+
+  const nextIndex =
+    currentIndex + 1;
+
+
+  if (
+    nextIndex >=
+    battleQuestions.length
+  ) {
+    if (
+      alivePlayers.length > 1
+    ) {
+      setHostMessage(
+        `${alivePlayers.length} players are still alive but there are no more Battle Royale questions. Add more questions or use a tie-breaker.`
+      );
+    }
+
+    return;
+  }
+
+
+  const nextQuestion =
+    battleQuestions[nextIndex];
+
+
+  await updateGameState({
+    game_mode: "battle",
+    status: "question",
+    current_question:
+      nextQuestion.id,
+    round_number:
+      (gameState.round_number || 0) +
+      1
+  });
+
+
+  if (alivePlayers.length <= 3) {
+    setHostMessage(
+      `🔥 FINAL ${alivePlayers.length}! Next question is live.`
+    );
+  } else {
+    setHostMessage(
+      `Round ${
+        (gameState.round_number || 0)
+      } is live.`
+    );
+  }
+}
+
+
+// ======================================================
+// BATTLE — REVEAL / MARK
+// ======================================================
+
+async function revealBattleAnswers() {
+  if (
+    !gameState ||
+    gameState.game_mode !== "battle"
+  ) {
+    setHostMessage(
+      "Battle Royale is not active."
+    );
+
+    return;
+  }
+
+
+  if (
+    gameState.status === "result"
+  ) {
+    setHostMessage(
+      "This question has already been revealed."
+    );
+
+    return;
+  }
+
+
+  const question =
+    battleQuestions.find(
+      item =>
+        Number(item.id) ===
+        Number(
+          gameState.current_question
+        )
+    );
+
+
+  if (!question) {
+    setHostMessage(
+      "Could not find the current question."
+    );
+
+    return;
+  }
+
+
+  const { data: alivePlayers, error: playerError } =
+    await supabaseClient
+      .from("players")
+      .select("*")
+      .eq("alive", true);
+
+
+  if (playerError) {
+    console.error(playerError);
+
+    setHostMessage(
+      "Could not load alive players."
+    );
+
+    return;
+  }
+
+
+  const { data: answers, error: answerError } =
+    await supabaseClient
+      .from("answers")
+      .select("*")
+      .eq(
+        "game_mode",
+        "battle"
+      )
+      .eq(
+        "question_id",
+        question.id
+      );
+
+
+  if (answerError) {
+    console.error(answerError);
+
+    setHostMessage(
+      "Could not load answers."
+    );
+
+    return;
+  }
+
+
+  const correctAnswer =
+    String(
+      question.correct_answer
+    )
+      .trim()
+      .toUpperCase();
+
+
+  const eliminatedIds = [];
+
+
+  for (
+    const player of
+    alivePlayers || []
+  ) {
+    const answer =
+      (answers || []).find(
+        item =>
+          item.player_id ===
+          player.id
+      );
+
+
+    const submittedAnswer =
+      String(
+        answer?.answer || ""
+      )
+        .trim()
+        .toUpperCase();
+
+
+    const correct =
+      submittedAnswer ===
+      correctAnswer;
+
+
+    if (answer) {
+      await supabaseClient
+        .from("answers")
+        .update({
+          correct,
+          points: 0
+        })
+        .eq(
+          "id",
+          answer.id
+        );
+    }
+
+
+    if (!correct) {
+      eliminatedIds.push(
+        player.id
+      );
+    }
+  }
+
+
+  for (
+    const playerId of
+    eliminatedIds
+  ) {
+    await supabaseClient
+      .from("players")
+      .update({
+        alive: false
+      })
+      .eq(
+        "id",
+        playerId
+      );
+  }
+
+
+  // IMPORTANT:
+  // Set result AFTER player
+  // elimination updates so phones
+  // receive the final alive state.
+  await updateGameState({
+    status: "result"
+  });
+
+
+  await loadPlayers();
+
+
+  const survivors =
+    players.filter(
+      player => player.alive
+    );
+
+
+  if (survivors.length === 1) {
+    setHostMessage(
+      `👑 ${survivors[0].nickname} is the last player standing! Press NEXT QUESTION to crown the champion.`
+    );
+
+    return;
+  }
+
+
+  if (survivors.length === 0) {
+    setHostMessage(
+      "💀 Everyone was eliminated! Use REDEMPTION ROUND."
+    );
+
+    return;
+  }
+
+
+  if (survivors.length <= 3) {
+    setHostMessage(
+      `🔥 FINAL ${survivors.length}!`
+    );
+
+    return;
+  }
+
+
+  setHostMessage(
+    `${survivors.length} players survived this round.`
+  );
+}
+
+
+// ======================================================
+// BATTLE — REDEMPTION
+// ======================================================
+
+async function redemptionRound() {
+  if (
+    !gameState ||
+    gameState.game_mode !== "battle"
+  ) {
+    setHostMessage(
+      "Battle Royale is not active."
+    );
+
+    return;
+  }
+
+
+  const eliminated =
+    players.filter(
+      player => !player.alive
+    );
+
+
+  if (eliminated.length === 0) {
+    setHostMessage(
+      "Nobody is eliminated right now."
+    );
+
+    return;
+  }
+
+
+  for (
+    const player of eliminated
+  ) {
+    await supabaseClient
+      .from("players")
+      .update({
+        alive: true
+      })
+      .eq(
+        "id",
+        player.id
+      );
+  }
+
+
+  await loadPlayers();
+
+
+  setHostMessage(
+    `⚡ Redemption! ${eliminated.length} player(s) are back in the game.`
+  );
+}
+
+
+// ======================================================
+// BATTLE — CROWN WINNER
+// ======================================================
+
+async function crownBattleWinner(
+  winner
+) {
+  if (!winner) return;
+
+
+  await updateGameState({
+    game_mode: "winner",
+    status: "battle_winner"
+  });
+
+
+  setHostMessage(
+    `👑 ${winner.nickname} is the MGG Battle Royale Champion!`
+  );
+}
+
+
+// ======================================================
+// ZOOM — DISPLAY
+// ======================================================
+
+function updateZoomDisplay() {
+  const image =
+    byId("hostZoomImage");
+
+  const points =
+    byId("hostZoomPoints");
+
+
+  if (
+    !gameState ||
+    gameState.game_mode !== "zoom"
+  ) {
+    if (image) {
+      image.textContent =
+        "No Zoomed In image active.";
+    }
+
+    if (points) {
+      points.textContent = "0";
+    }
+
+    return;
+  }
+
+
+  const question =
+    zoomQuestions.find(
+      item =>
+        Number(item.id) ===
+        Number(
+          gameState.current_question
+        )
+    );
+
+
+  if (image) {
+    image.textContent =
+      question?.title ||
+      `Image ${gameState.round_number}`;
+  }
+
+
+  const pointValues = {
+    1: 1000,
+    2: 750,
+    3: 500,
+    4: 250
+  };
+
+
+  if (points) {
+    points.textContent =
+      pointValues[
+        gameState.zoom_level
+      ] || 250;
+  }
+}
+
+
+// ======================================================
+// ZOOM — START
+// ======================================================
+
+async function startZoom() {
+  if (zoomQuestions.length === 0) {
+    setHostMessage(
+      "No Zoomed In images have been added yet."
+    );
+
+    return;
+  }
+
+
+  if (players.length === 0) {
+    setHostMessage(
+      "No players have joined yet."
+    );
+
+    return;
+  }
+
+
+  const cleared =
+    await clearGameAnswers(
+      "zoom"
+    );
+
+
+  if (!cleared) {
+    return;
+  }
+
+
+  const first =
+    zoomQuestions[0];
+
+
+  await updateGameState({
+    game_mode: "zoom",
+    status: "question",
+    current_question:
+      first.id,
+    zoom_level: 1,
+    round_number: 1
+  });
+
+
+  setHostMessage(
+    "Zoomed In started! 🔍"
+  );
+}
+
+
+// ======================================================
+// ZOOM — ZOOM OUT
+// ======================================================
+
+async function zoomOut() {
+  if (
+    !gameState ||
+    gameState.game_mode !== "zoom"
+  ) {
+    setHostMessage(
+      "Start Zoomed In first."
+    );
+
+    return;
+  }
+
+
+  if (
+    gameState.status === "result"
+  ) {
+    setHostMessage(
+      "The answer has already been revealed."
+    );
+
+    return;
+  }
+
+
+  const current =
+    Number(
+      gameState.zoom_level || 1
+    );
+
+
+  if (current >= 4) {
+    setHostMessage(
+      "This is already the final zoom level."
+    );
+
+    return;
+  }
+
+
+  await updateGameState({
+    zoom_level: current + 1
+  });
+
+
+  setHostMessage(
+    `Zoom level ${current + 1}.`
+  );
+}
+
+
+// ======================================================
+// ZOOM — ANSWER MATCHING
+// ======================================================
+
+function zoomAnswerIsCorrect(
+  submitted,
+  correct
+) {
+  const userAnswer =
+    normaliseAnswer(submitted);
+
+  const acceptedAnswers =
+    String(correct || "")
+      .split("|")
+      .map(normaliseAnswer)
+      .filter(Boolean);
+
+
+  if (!userAnswer) {
+    return false;
+  }
+
+
+  return acceptedAnswers.some(
+    accepted => {
+
+      if (
+        userAnswer === accepted
+      ) {
+        return true;
+      }
+
+
+      // Allows small variations
+      // such as "airpod" vs "airpods"
+      if (
+        accepted.length >= 5 &&
+        (
+          userAnswer.includes(
+            accepted
+          ) ||
+          accepted.includes(
+            userAnswer
+          )
+        )
+      ) {
+        return true;
+      }
+
+
+      return false;
+    }
+  );
+}
+
+
+// ======================================================
+// ZOOM — REVEAL / MARK
+// ======================================================
+
+async function revealZoomAnswers() {
+  if (
+    !gameState ||
+    gameState.game_mode !== "zoom"
+  ) {
+    setHostMessage(
+      "Zoomed In is not active."
+    );
+
+    return;
+  }
+
+
+  // Prevent double scoring
+  if (
+    gameState.status === "result"
+  ) {
+    setHostMessage(
+      "This image has already been scored."
+    );
+
+    return;
+  }
+
+
+  const question =
+    zoomQuestions.find(
+      item =>
+        Number(item.id) ===
+        Number(
+          gameState.current_question
+        )
+    );
+
+
+  if (!question) {
+    setHostMessage(
+      "Could not find this Zoomed In image."
+    );
+
+    return;
+  }
+
+
+  const { data: answers, error } =
+    await supabaseClient
+      .from("answers")
+      .select("*")
+      .eq(
+        "game_mode",
+        "zoom"
+      )
+      .eq(
+        "question_id",
+        question.id
+      );
+
+
+  if (error) {
+    console.error(error);
+
+    setHostMessage(
+      "Could not load Zoomed In answers."
+    );
+
+    return;
+  }
+
+
+  for (
+    const answer of
+    answers || []
+  ) {
+    // If already marked,
+    // never award it again.
+    if (
+      answer.correct === true ||
+      Number(answer.points) > 0
+    ) {
+      continue;
+    }
+
+
+    const correct =
+      zoomAnswerIsCorrect(
+        answer.answer,
+        question.correct_answer
+      );
+
+
+    const points =
+      correct
+        ? Number(
+            answer.points || 0
+          )
+        : 0;
+
+
+    if (correct && points > 0) {
+      const { data: player } =
+        await supabaseClient
+          .from("players")
+          .select("score")
+          .eq(
+            "id",
+            answer.player_id
+          )
+          .single();
+
+
+      const newScore =
+        Number(
+          player?.score || 0
+        ) + points;
+
+
+      await supabaseClient
+        .from("players")
+        .update({
+          score: newScore
+        })
+        .eq(
+          "id",
+          answer.player_id
+        );
+    }
+
+
+    await supabaseClient
+      .from("answers")
+      .update({
+        correct,
+        points
+      })
+      .eq(
+        "id",
+        answer.id
+      );
+  }
+
+
+  await updateGameState({
+    status: "result"
+  });
+
+
+  await loadPlayers();
+
+
+  setHostMessage(
+    `Answer revealed: ${question.correct_answer}`
+  );
+}
+
+
+// ======================================================
+// ZOOM — NEXT IMAGE
+// ======================================================
+
+async function nextZoomImage() {
+  if (
+    !gameState ||
+    gameState.game_mode !== "zoom"
+  ) {
+    setHostMessage(
+      "Start Zoomed In first."
+    );
+
+    return;
+  }
+
+
+  const currentIndex =
+    zoomQuestions.findIndex(
+      question =>
+        Number(question.id) ===
+        Number(
+          gameState.current_question
+        )
+    );
+
+
+  const nextIndex =
+    currentIndex + 1;
+
+
+  if (
+    nextIndex >=
+    zoomQuestions.length
+  ) {
+    await showLeaderboard();
+
+    setHostMessage(
+      "All Zoomed In images complete — leaderboard time! 🏆"
+    );
+
+    return;
+  }
+
+
+  const nextQuestion =
+    zoomQuestions[nextIndex];
+
+
+  await updateGameState({
+    game_mode: "zoom",
+    status: "question",
+    current_question:
+      nextQuestion.id,
+    zoom_level: 1,
+    round_number:
+      (gameState.round_number || 0) +
+      1
+  });
+
+
+  setHostMessage(
+    `Zoomed In image ${
+      (gameState.round_number || 0)
+    } is live.`
+  );
+}
+
+
+// ======================================================
+// SHOW LOBBY
+// ======================================================
+
+async function showLobby() {
+  await updateGameState({
+    game_mode: "lobby",
+    status: "waiting",
+    current_question: 0,
+    round_number: 0,
+    zoom_level: 1
+  });
+
+
+  setHostMessage(
+    "Projector returned to lobby."
+  );
+}
+
+
+// ======================================================
+// SHOW LEADERBOARD
+// ======================================================
+
+async function showLeaderboard() {
+  await updateGameState({
+    game_mode: "leaderboard",
+    status: "show"
+  });
+
+
+  setHostMessage(
+    "Leaderboard is on the projector."
+  );
+}
+
+
+// ======================================================
+// SHOW WINNER
+// ======================================================
+
+async function showWinner() {
+  await loadPlayers();
+
+
+  if (players.length === 0) {
+    setHostMessage(
+      "There are no players."
+    );
+
+    return;
+  }
+
+
+  // If coming from Battle Royale,
+  // the last alive player wins.
+  const alive =
+    players.filter(
+      player => player.alive
+    );
+
+
+  if (
+    gameState?.game_mode === "battle" &&
+    alive.length === 1
+  ) {
+    await crownBattleWinner(
+      alive[0]
+    );
+
+    return;
+  }
+
+
+  // Otherwise the highest score
+  // wins Zoomed In.
+  const sorted =
+    [...players].sort(
+      (a, b) =>
+        (b.score || 0) -
+        (a.score || 0)
+    );
+
+
+  const winner = sorted[0];
+
+
+  await updateGameState({
+    game_mode: "winner",
+    status: "zoom_winner"
+  });
+
+
+  setHostMessage(
+    `👑 ${winner.nickname} is the Zoomed In Champion!`
+  );
+}
+
+
+// ======================================================
+// REFRESH
+// ======================================================
+
+async function refreshHost() {
+  await Promise.all([
+    loadPlayers(),
+    loadQuestions()
+  ]);
+
+  await loadGameState();
+
+  setHostMessage(
+    "Host dashboard refreshed."
+  );
+}
+
+
+// ======================================================
+// RESET EVERYTHING
+// ======================================================
+
+async function resetEverything() {
+  const confirmed =
+    window.confirm(
+      "RESET EVERYTHING?\n\nThis removes all players and answers and returns the projector to the lobby."
+    );
+
   if (!confirmed) return;
+
+
+  setHostMessage(
+    "Resetting everything..."
+  );
 
 
   const answerDelete =
@@ -1034,6 +1548,12 @@ async function resetEverything() {
     console.error(
       answerDelete.error
     );
+
+    setHostMessage(
+      "Could not delete answers. A Supabase DELETE policy may still need to be enabled."
+    );
+
+    return;
   }
 
 
@@ -1048,13 +1568,12 @@ async function resetEverything() {
 
 
   if (playerDelete.error) {
-
     console.error(
       playerDelete.error
     );
 
-    hostMessage(
-      "Could not delete players."
+    setHostMessage(
+      "Could not delete players. A Supabase DELETE policy may still need to be enabled."
     );
 
     return;
@@ -1065,164 +1584,131 @@ async function resetEverything() {
     game_mode: "lobby",
     status: "waiting",
     current_question: 0,
-    round_number: 0,
-    zoom_level: 1
+    zoom_level: 1,
+    round_number: 0
   });
 
 
-  await loadHostPlayers();
+  players = [];
+
+  renderPlayerList();
+  updateHostDisplay();
 
 
-  hostMessage(
-    "Everything reset. Ready for a new game."
+  setHostMessage(
+    "Everything reset. Ready for a fresh game! ✨"
   );
-
 }
 
 
-// ==========================================
-// BUTTONS
-// ==========================================
+// ======================================================
+// BUTTON CONNECTIONS
+// ======================================================
 
-function connectHostButtons() {
+function connectButton(
+  id,
+  handler
+) {
+  const button = byId(id);
 
-  document
-    .getElementById("startBattleButton")
-    .addEventListener(
+  if (button) {
+    button.addEventListener(
       "click",
-      startBattle
+      handler
     );
-
-
-  document
-    .getElementById("nextBattleButton")
-    .addEventListener(
-      "click",
-      nextBattleQuestion
-    );
-
-
-  document
-    .getElementById("revealBattleButton")
-    .addEventListener(
-      "click",
-      revealBattleAnswers
-    );
-
-
-  document
-    .getElementById("redemptionButton")
-    .addEventListener(
-      "click",
-      redemptionRound
-    );
-
-
-  document
-    .getElementById("startZoomButton")
-    .addEventListener(
-      "click",
-      startZoom
-    );
-
-
-  document
-    .getElementById("zoomOutButton")
-    .addEventListener(
-      "click",
-      zoomOut
-    );
-
-
-  document
-    .getElementById("revealZoomButton")
-    .addEventListener(
-      "click",
-      revealZoomAnswers
-    );
-
-
-  document
-    .getElementById("nextZoomButton")
-    .addEventListener(
-      "click",
-      nextZoomQuestion
-    );
-
-
-  document
-    .getElementById("showLobbyButton")
-    .addEventListener(
-      "click",
-      showLobby
-    );
-
-
-  document
-    .getElementById("showLeaderboardButton")
-    .addEventListener(
-      "click",
-      showLeaderboard
-    );
-
-
-  document
-    .getElementById("showWinnerButton")
-    .addEventListener(
-      "click",
-      showWinner
-    );
-
-
-  document
-    .getElementById("refreshStatsButton")
-    .addEventListener(
-      "click",
-      async () => {
-        await loadHostPlayers();
-        await loadHostState();
-
-        hostMessage(
-          "Stats refreshed."
-        );
-      }
-    );
-
-
-  document
-    .getElementById("resetBattleButton")
-    .addEventListener(
-      "click",
-      reviveAllPlayers
-    );
-
-
-  document
-    .getElementById("resetScoresButton")
-    .addEventListener(
-      "click",
-      resetScores
-    );
-
-
-  document
-    .getElementById("resetGameButton")
-    .addEventListener(
-      "click",
-      resetEverything
-    );
-
+  }
 }
 
 
-// ==========================================
+connectButton(
+  "startBattleButton",
+  startBattle
+);
+
+connectButton(
+  "nextBattleButton",
+  nextBattleQuestion
+);
+
+connectButton(
+  "revealBattleButton",
+  revealBattleAnswers
+);
+
+connectButton(
+  "redemptionButton",
+  redemptionRound
+);
+
+
+connectButton(
+  "startZoomButton",
+  startZoom
+);
+
+connectButton(
+  "zoomOutButton",
+  zoomOut
+);
+
+connectButton(
+  "revealZoomButton",
+  revealZoomAnswers
+);
+
+connectButton(
+  "nextZoomButton",
+  nextZoomImage
+);
+
+
+connectButton(
+  "showLobbyButton",
+  showLobby
+);
+
+connectButton(
+  "showLeaderboardButton",
+  showLeaderboard
+);
+
+connectButton(
+  "showWinnerButton",
+  showWinner
+);
+
+connectButton(
+  "refreshStatsButton",
+  refreshHost
+);
+
+
+connectButton(
+  "reviveAllButton",
+  () =>
+    reviveAllPlayers(true)
+);
+
+connectButton(
+  "resetScoresButton",
+  resetScores
+);
+
+connectButton(
+  "resetEverythingButton",
+  resetEverything
+);
+
+
+// ======================================================
 // REALTIME
-// ==========================================
+// ======================================================
 
-function subscribeHost() {
-
+function subscribeToRealtime() {
   supabaseClient
-    .channel("mgg-host-players")
+    .channel(
+      "mgg-host-players"
+    )
     .on(
       "postgres_changes",
       {
@@ -1230,16 +1716,17 @@ function subscribeHost() {
         schema: "public",
         table: "players"
       },
-
       async () => {
-        await loadHostPlayers();
+        await loadPlayers();
       }
     )
     .subscribe();
 
 
   supabaseClient
-    .channel("mgg-host-state")
+    .channel(
+      "mgg-host-state"
+    )
     .on(
       "postgres_changes",
       {
@@ -1248,37 +1735,38 @@ function subscribeHost() {
         table: "game_state",
         filter: "id=eq.1"
       },
-
       payload => {
-        hostState = payload.new;
-        updateHostStateDisplay();
+        gameState =
+          payload.new;
+
+        updateHostDisplay();
       }
     )
     .subscribe();
-
 }
 
 
-// ==========================================
+// ======================================================
 // START HOST
-// ==========================================
+// ======================================================
 
 async function startHost() {
-
-  connectHostButtons();
-
-  await loadQuestions();
-
-  await loadHostState();
-
-  await loadHostPlayers();
-
-  subscribeHost();
-
-  hostMessage(
-    "Host controls ready."
+  setHostMessage(
+    "Loading MGG control panel..."
   );
 
+
+  await loadQuestions();
+  await loadPlayers();
+  await loadGameState();
+
+
+  subscribeToRealtime();
+
+
+  setHostMessage(
+    "MGG control panel ready ✨"
+  );
 }
 
 
