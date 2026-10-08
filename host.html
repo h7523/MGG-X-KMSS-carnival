@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Host Control | MGG Carnival</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;1,700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="host-page">
+
+  <main class="host-dashboard">
+
+    <!-- HEADER -->
+
+    <header class="host-header">
+
+      <img
+        src="mgg-logo.png.png"
+        alt="The MGG Society"
+        class="host-logo"
+      >
+
+      <div>
+        <p class="host-eyebrow">PRIVATE CONTROL PANEL</p>
+        <h1>GAME <span>HOST</span></h1>
+      </div>
+
+      <div class="host-live-status">
+        <span class="online-dot"></span>
+        CONNECTED
+      </div>
+
+    </header>
+
+
+    <!-- LIVE INFO -->
+
+    <section class="host-stats">
+
+      <div class="host-stat">
+        <span>PLAYERS</span>
+        <strong id="hostPlayerCount">0</strong>
+      </div>
+
+      <div class="host-stat">
+        <span>ALIVE</span>
+        <strong id="hostAliveCount">0</strong>
+      </div>
+
+      <div class="host-stat">
+        <span>GAME</span>
+        <strong id="hostCurrentGame">LOBBY</strong>
+      </div>
+
+      <div class="host-stat">
+        <span>ROUND</span>
+        <strong id="hostRound">0</strong>
+      </div>
+
+    </section>
+
+
+    <!-- MAIN CONTROLS -->
+
+    <section class="host-grid">
+
+      <!-- BATTLE ROYALE -->
+
+      <div class="host-panel battle-host-panel">
+
+        <div class="host-panel-heading">
+          <div>
+            <p class="host-number">GAME 01</p>
+            <h2>⚔️ BATTLE ROYALE</h2>
+          </div>
+
+          <span class="host-game-tag">
+            ELIMINATION
+          </span>
+        </div>
+
+        <p class="host-panel-description">
+          Wrong answer = eliminated. Last player standing wins.
+        </p>
+
+
+        <div class="host-control-grid">
+
+          <button
+            id="startBattleButton"
+            class="host-button host-primary"
+          >
+            START BATTLE
+          </button>
+
+          <button
+            id="nextBattleButton"
+            class="host-button"
+          >
+            NEXT QUESTION
+          </button>
+
+          <button
+            id="revealBattleButton"
+            class="host-button"
+          >
+            REVEAL / MARK ANSWERS
+          </button>
+
+          <button
+            id="redemptionButton"
+            class="host-button"
+          >
+            REDEMPTION
+          </button>
+
+        </div>
+
+
+        <div class="host-current-question">
+
+          <span>CURRENT QUESTION</span>
+
+          <strong id="hostBattleQuestion">
+            None
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- ZOOMED IN -->
+
+      <div class="host-panel zoom-host-panel">
+
+        <div class="host-panel-heading">
+
+          <div>
+            <p class="host-number">GAME 02</p>
+            <h2>🔎 ZOOMED IN</h2>
+          </div>
+
+          <span class="host-game-tag">
+            POINTS
+          </span>
+
+        </div>
+
+        <p class="host-panel-description">
+          Start extremely close and zoom out as the points decrease.
+        </p>
+
+
+        <div class="host-control-grid">
+
+          <button
+            id="startZoomButton"
+            class="host-button host-primary"
+          >
+            START ZOOMED IN
+          </button>
+
+          <button
+            id="zoomOutButton"
+            class="host-button"
+          >
+            ZOOM OUT
+          </button>
+
+          <button
+            id="revealZoomButton"
+            class="host-button"
+          >
+            REVEAL / MARK ANSWERS
+          </button>
+
+          <button
+            id="nextZoomButton"
+            class="host-button"
+          >
+            NEXT IMAGE
+          </button>
+
+        </div>
+
+
+        <div class="host-current-question">
+
+          <span>CURRENT IMAGE</span>
+
+          <strong id="hostZoomQuestion">
+            None
+          </strong>
+
+        </div>
+
+
+        <div class="host-zoom-level">
+
+          <span>CURRENT VALUE</span>
+
+          <strong id="hostZoomPoints">
+            1000 POINTS
+          </strong>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- PROJECTOR CONTROLS -->
+
+    <section class="host-panel projector-control-panel">
+
+      <div class="host-panel-heading">
+
+        <div>
+          <p class="host-number">PROJECTOR</p>
+          <h2>🎬 SCREEN CONTROL</h2>
+        </div>
+
+      </div>
+
+
+      <div class="host-control-grid projector-buttons">
+
+        <button
+          id="showLobbyButton"
+          class="host-button"
+        >
+          SHOW LOBBY
+        </button>
+
+        <button
+          id="showLeaderboardButton"
+          class="host-button"
+        >
+          SHOW LEADERBOARD
+        </button>
+
+        <button
+          id="showWinnerButton"
+          class="host-button"
+        >
+          SHOW WINNER
+        </button>
+
+        <button
+          id="refreshStatsButton"
+          class="host-button"
+        >
+          REFRESH STATS
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- PLAYERS -->
+
+    <section class="host-panel">
+
+      <div class="host-panel-heading">
+
+        <div>
+          <p class="host-number">LIVE</p>
+          <h2>👥 PLAYERS</h2>
+        </div>
+
+      </div>
+
+      <div
+        id="hostPlayerList"
+        class="host-player-list"
+      >
+        <p>No players yet.</p>
+      </div>
+
+    </section>
+
+
+    <!-- DANGER ZONE -->
+
+    <section class="host-panel host-danger-panel">
+
+      <div class="host-panel-heading">
+
+        <div>
+          <p class="host-number">RESET</p>
+          <h2>⚠️ GAME CONTROLS</h2>
+        </div>
+
+      </div>
+
+      <p class="host-panel-description">
+        Use these controls carefully during the carnival.
+      </p>
+
+
+      <div class="host-control-grid">
+
+        <button
+          id="resetBattleButton"
+          class="host-button"
+        >
+          REVIVE ALL PLAYERS
+        </button>
+
+        <button
+          id="resetScoresButton"
+          class="host-button"
+        >
+          RESET SCORES
+        </button>
+
+        <button
+          id="resetGameButton"
+          class="host-button host-danger"
+        >
+          RESET EVERYTHING
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- STATUS MESSAGE -->
+
+    <div
+      id="hostMessage"
+      class="host-message"
+      aria-live="polite"
+    >
+      Host controls ready.
+    </div>
+
+  </main>
+
+
+  <script src="js/config.js"></script>
+  <script src="js/host.js"></script>
+
+</body>
+</html>
